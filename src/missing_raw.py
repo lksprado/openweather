@@ -25,7 +25,7 @@ def _get_first(db, sql: str):
 def identify_and_write_missing_dates(db, output_filepath)-> bool:    
     logger.info("Obtendo data maxima no DW")
 
-    query_daily = f"SELECT MAX(date) :: DATE AS DT FROM raw.openweather__atb_daily"
+    query_daily = f"SELECT MAX(date) :: DATE AS DT FROM raw.openweather_daily"
     
     result_daily  = _get_first(db, query_daily)
     

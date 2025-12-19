@@ -22,7 +22,7 @@ def _get_first(db, sql: str):
     raise TypeError("db deve ser PostgresHook ou conexão psycopg2.")
 
 
-def identify_and_write_missing_dates(db, output_filepath)-> bool:    
+def identify_missing_dates(db)-> list:    
     logger.info("Obtendo data maxima no DW")
 
     query_daily = f"SELECT MAX(date) :: DATE AS DT FROM raw.openweather_daily"
@@ -44,7 +44,6 @@ def identify_and_write_missing_dates(db, output_filepath)-> bool:
     # Step 3: Gera e escreve CSV
     if delta_days <= 0:
         logger.info("Nenhuma data faltando. Limpando arquivo de controle.")
-        open(output_filepath, "w").close()  # zera arquivo se não houver datas
         return
     
     missing_dates = [
@@ -52,16 +51,19 @@ def identify_and_write_missing_dates(db, output_filepath)-> bool:
         for i in range(1, delta_days+1) # +1 porque o range de 1 a 1 é zero/nulo, sempre e sempre deve haver pelo menos 1 de diferença
     ]
     
-    if not missing_dates:
-        logger.info("Nenhuma data encontrada.")
-        return False 
+    if missing_dates:
+        return missing_dates
+        
     else:
-        with open(output_filepath, mode='w') as file:
-            writer = csv.writer(file)
-            for missing_date in missing_dates:
-                writer.writerow([missing_date])
-        logger.info(f"Arquivo de controle atualizado com datas de {missing_dates[0]} até {missing_dates[-1]}.")
-        return True
+        logger.info("Nenhuma data encontrada.")
+
+def write_list_to_csv(input_ls: list, output_filepath):
+    with open(output_filepath, mode='w') as file:
+        writer = csv.writer(file)
+        for missing_date in input_ls:
+            writer.writerow([missing_date])
+    logger.info(f"Arquivo salvo em: {output_filepath}")
+
 
 if __name__ == '__main__':
     import psycopg2
@@ -74,7 +76,7 @@ if __name__ == '__main__':
                         )
     
     try:
-        identify_and_write_missing_dates(db=db_con, output_filepath='testing.csv')
+        identify_missing_dates(db=db_con)
     finally:
         db_con.close()
 
